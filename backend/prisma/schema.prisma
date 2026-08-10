@@ -1,0 +1,17 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Brew {
+  id          Int    @id @default(autoincrement())
+  name        String
+  method      String
+  coffeeGrams Int
+  waterGrams  Int
+  rating      Int
+}

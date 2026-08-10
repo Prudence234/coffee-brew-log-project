@@ -1,0 +1,14 @@
+{
+  "name": "coffee-brew-log-project",
+  "private": true,
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "install:all": "npm install",
+    "dev": "npm run dev --workspace backend",
+    "build": "npm run build --workspace frontend",
+    "start": "npm run start --workspace backend",
+    "db:migrate": "npm run db:migrate --workspace backend",
+    "db:generate": "npm run db:generate --workspace backend",
+    "db:deploy": "npm run db:deploy --workspace backend"
+  }
+}

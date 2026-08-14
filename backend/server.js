@@ -31,8 +31,8 @@ function normalizeBrew(body) {
   };
 }
 
-app.get("/", (_req, res) => res.json({ message: "Coffee Brew API is running" }));
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
+app.get("/api", (_req, res) => res.json({ message: "Coffee Brew API is running" }));
 
 app.get("/api/brews", async (req, res) => {
   try {
@@ -85,6 +85,7 @@ app.delete("/api/brews/:id", async (req, res) => {
   }
 });
 
+// Serve the built React application from the project root in production.
 const frontendDist = path.join(__dirname, "..", "frontend", "dist");
 app.use(express.static(frontendDist));
 app.get(/^(?!\/api(?:\/|$)).*/, (_req, res) => {

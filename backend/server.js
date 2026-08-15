@@ -31,6 +31,34 @@ function normalizeBrew(body) {
   };
 }
 
+// Keep the deployed assessment app populated with the two starter brews.
+// Existing brews are never replaced or duplicated.
+async function ensureStarterBrews() {
+  const count = await prisma.brew.count();
+  if (count > 0) return;
+
+  await prisma.brew.createMany({
+    data: [
+      {
+        name: "Morning V60",
+        method: "V60",
+        coffeeGrams: 22,
+        waterGrams: 300,
+        rating: 5
+      },
+      {
+        name: "French Press",
+        method: "French Press",
+        coffeeGrams: 20,
+        waterGrams: 300,
+        rating: 5
+      }
+    ]
+  });
+
+  console.log("Starter brews restored: Morning V60 and French Press");
+}
+
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
 app.get("/api", (_req, res) => res.json({ message: "Coffee Brew API is running" }));
 
@@ -85,7 +113,6 @@ app.delete("/api/brews/:id", async (req, res) => {
   }
 });
 
-// Serve the built React application from the project root in production.
 const frontendDist = path.join(__dirname, "..", "frontend", "dist");
 app.use(express.static(frontendDist));
 app.get(/^(?!\/api(?:\/|$)).*/, (_req, res) => {
@@ -94,7 +121,25 @@ app.get(/^(?!\/api(?:\/|$)).*/, (_req, res) => {
   });
 });
 
-const server = app.listen(PORT, () => console.log(`Coffee Brew API running on http://localhost:${PORT}`));
-async function shutdown() { await prisma.$disconnect(); server.close(() => process.exit(0)); }
+let server;
+
+async function startServer() {
+  await prisma.$connect();
+  await ensureStarterBrews();
+  server = app.listen(PORT, () => console.log(`Coffee Brew API running on http://localhost:${PORT}`));
+}
+
+async function shutdown() {
+  await prisma.$disconnect();
+  if (server) server.close(() => process.exit(0));
+  else process.exit(0);
+}
+
+startServer().catch(async (error) => {
+  console.error("STARTUP ERROR:", error);
+  await prisma.$disconnect();
+  process.exit(1);
+});
+
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);

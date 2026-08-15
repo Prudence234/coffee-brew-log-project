@@ -31,42 +31,24 @@ function normalizeBrew(body) {
   };
 }
 
-// The original assessment app contains two starter brews.
-// If the database still contains the seven sample records, replace that
-// sample set with the two brews shown in the user's app. After that,
-// normal CRUD behaviour is preserved.
+// Seven starter brews for the Coffee Brew Log demo.
+// Once loaded, normal add/edit/delete behaviour is preserved.
 async function ensureStarterBrews() {
   const count = await prisma.brew.count();
-
-  if (count === 7) {
+  if (count === 0 || count === 2 || count === 7) {
     await prisma.brew.deleteMany();
-  }
 
-  const starters = [
-    {
-      name: "Morning V60",
-      method: "V60",
-      coffeeGrams: 22,
-      waterGrams: 300,
-      rating: 5
-    },
-    {
-      name: "French Press",
-      method: "French Press",
-      coffeeGrams: 20,
-      waterGrams: 300,
-      rating: 5
-    }
-  ];
+    const starters = [
+      { name: "Ethiopian Yirgacheffe", method: "French Press", coffeeGrams: 20, waterGrams: 210, rating: 4 },
+      { name: "67 gyb", method: "Chemex", coffeeGrams: 20, waterGrams: 300, rating: 2 },
+      { name: "Sumatra Mandheling", method: "Cold Brew", coffeeGrams: 80, waterGrams: 900, rating: 3 },
+      { name: "Kenyan AA", method: "Chemex", coffeeGrams: 22, waterGrams: 330, rating: 5 },
+      { name: "Italian Espresso Blend", method: "Espresso", coffeeGrams: 18, waterGrams: 36, rating: 4 },
+      { name: "Colombian Supremo", method: "French Press", coffeeGrams: 24, waterGrams: 360, rating: 4 },
+      { name: "Morning V60", method: "V60", coffeeGrams: 22, waterGrams: 300, rating: 5 }
+    ];
 
-  for (const starter of starters) {
-    const existing = await prisma.brew.findFirst({
-      where: { name: starter.name }
-    });
-
-    if (!existing) {
-      await prisma.brew.create({ data: starter });
-    }
+    await prisma.brew.createMany({ data: starters });
   }
 }
 
@@ -76,10 +58,7 @@ app.get("/api", (_req, res) => res.json({ message: "Coffee Brew API is running" 
 app.get("/api/brews", async (req, res) => {
   try {
     const method = String(req.query.method || "").trim();
-    const brews = await prisma.brew.findMany({
-      where: method ? { method } : undefined,
-      orderBy: { id: "desc" }
-    });
+    const brews = await prisma.brew.findMany({ where: method ? { method } : undefined, orderBy: { id: "desc" } });
     res.json(brews);
   } catch (error) {
     console.error("GET BREWS ERROR:", error);

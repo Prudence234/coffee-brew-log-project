@@ -31,32 +31,43 @@ function normalizeBrew(body) {
   };
 }
 
-// Keep the deployed assessment app populated with the two starter brews.
-// Existing brews are never replaced or duplicated.
+// The original assessment app contains two starter brews.
+// If the database still contains the seven sample records, replace that
+// sample set with the two brews shown in the user's app. After that,
+// normal CRUD behaviour is preserved.
 async function ensureStarterBrews() {
   const count = await prisma.brew.count();
-  if (count > 0) return;
 
-  await prisma.brew.createMany({
-    data: [
-      {
-        name: "Morning V60",
-        method: "V60",
-        coffeeGrams: 22,
-        waterGrams: 300,
-        rating: 5
-      },
-      {
-        name: "French Press",
-        method: "French Press",
-        coffeeGrams: 20,
-        waterGrams: 300,
-        rating: 5
-      }
-    ]
-  });
+  if (count === 7) {
+    await prisma.brew.deleteMany();
+  }
 
-  console.log("Starter brews restored: Morning V60 and French Press");
+  const starters = [
+    {
+      name: "Morning V60",
+      method: "V60",
+      coffeeGrams: 22,
+      waterGrams: 300,
+      rating: 5
+    },
+    {
+      name: "French Press",
+      method: "French Press",
+      coffeeGrams: 20,
+      waterGrams: 300,
+      rating: 5
+    }
+  ];
+
+  for (const starter of starters) {
+    const existing = await prisma.brew.findFirst({
+      where: { name: starter.name }
+    });
+
+    if (!existing) {
+      await prisma.brew.create({ data: starter });
+    }
+  }
 }
 
 app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
@@ -65,7 +76,10 @@ app.get("/api", (_req, res) => res.json({ message: "Coffee Brew API is running" 
 app.get("/api/brews", async (req, res) => {
   try {
     const method = String(req.query.method || "").trim();
-    const brews = await prisma.brew.findMany({ where: method ? { method } : undefined, orderBy: { id: "desc" } });
+    const brews = await prisma.brew.findMany({
+      where: method ? { method } : undefined,
+      orderBy: { id: "desc" }
+    });
     res.json(brews);
   } catch (error) {
     console.error("GET BREWS ERROR:", error);
